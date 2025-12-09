@@ -1,0 +1,833 @@
+<!-- FULL FBT SECTION CODE PROVIDED AS‑IS -->
+
+{%- liquid
+  assign fbt_products = product.metafields.custom.bundle_frequently_bought_together.value
+  assign products_count = fbt_products.size | default: 0
+-%}
+{% if fbt_products != blank %}
+{%- if products_count > 0 -%}{%- endif -%}
+<div class="fbt-block" {{ block.shopify_attributes }}>
+  <div class="page-width">
+    <div class="frq_section_heading">  
+      {% if section.settings.heading != blank %}
+        <h2 class="fbt-heading">{{ section.settings.heading }}</h2>
+      {% endif %}
+      {% if section.settings.subpara != blank %}
+        <div class="fbt-para">{{ section.settings.subpara }}</div>
+      {% endif %}
+    </div>
+  <div class="fbt-products-wrapper">
+    <div class="fbt-products{% if products_count > 3 %} fbt-products--carousel{% endif %}" data-fbt-products>
+
+      {%- for fbt_product in fbt_products -%}
+        {%- assign current_variant = fbt_product.selected_or_first_available_variant -%}
+        {%- assign compare_price = current_variant.compare_at_price | default: 0 -%}
+        {%- assign price = current_variant.price -%}
+
+        <div class="fbt-product-card" data-product-id="{{ fbt_product.id }}">
+          {%- if forloop.first == false -%}
+            <div class="fbt-plus-icon">+</div>
+          {%- endif -%}
+
+          <div class="fbt-card-inner">
+            <div class="fbt-checkbox-wrapper">
+              <input type="checkbox" class="fbt-checkbox" id="fbt-check-{{ fbt_product.id }}-{{ block.id }}" data-product-id="{{ fbt_product.id }}" checked>
+              <label for="fbt-check-{{ fbt_product.id }}-{{ block.id }}" class="fbt-checkbox-label">
+                <svg class="fbt-check-icon" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                </svg>
+              </label>
+            </div>
+
+            <div class="fbt-product-image">
+              {%- if fbt_product.featured_image -%}
+                <img src="{{ fbt_product.featured_image | image_url: width: 150 }}" alt="{{ fbt_product.title }}" width="150" height="150" loading="lazy">
+              {%- endif -%}
+            </div>
+
+            <div class="fbt-product-info">
+              <h3 class="fbt-product-title">
+                <a href="{{ fbt_product.url }}">{{ fbt_product.title }}</a>
+              </h3>
+              <div class="fbt-price-wrapper">
+                {%- if compare_price > price -%}
+                  {% comment %} <span class="fbt-compare-price" data-compare="{{ compare_price }}">${{ compare_price | divided_by: 100 }}</span> {% endcomment %}
+                  <span class="fbt-compare-price" data-compare="{{ compare_price }}">{{ compare_price | money }}</span>
+                {%- endif -%}
+                {% comment %} <span class="fbt-price" data-price="{{ price }}">${{ price | divided_by: 100 }}</span> {% endcomment %}
+                 <span class="fbt-price" data-price="{{ price }}">{{ price | money }}</span>
+              </div>
+              {%- if fbt_product.variants.size > 1 -%}
+                <div class="fbt-variant-selector" data-product-id="{{ fbt_product.id }}">
+                    {%- for option in fbt_product.options_with_values -%}
+                    <div class="fbt-option-dropdown" data-option-position="{{ option.position }}">
+                        <!--<label>{{ option.name }}</label> -->
+                        <select data-product-id="{{ fbt_product.id }}" data-option-position="{{ option.position }}">
+                        {%- for value in option.values -%}
+                            {%- assign is_selected = false -%}
+                            {%- if option.position == 1 and current_variant.option1 == value -%}
+                            {%- assign is_selected = true -%}
+                            {%- elsif option.position == 2 and current_variant.option2 == value -%}
+                            {%- assign is_selected = true -%}
+                            {%- elsif option.position == 3 and current_variant.option3 == value -%}
+                            {%- assign is_selected = true -%}
+                            {%- endif -%}
+                            <option value="{{ value }}" {% if is_selected %}selected{% endif %}>{{ value }}</option>
+                        {%- endfor -%}
+                        </select>
+                    </div>
+                    {%- endfor -%}
+                </div>
+
+                <script type="application/json" class="fbt-variants-data" data-product-id="{{ fbt_product.id }}">
+                  {
+                    "variants": [
+                      {%- for variant in fbt_product.variants -%}
+                        {
+                          "id": {{ variant.id | json }},
+                          "available": {{ variant.available | json }},
+                          "price": {{ variant.price | json }},
+                          "compare_at_price": {{ variant.compare_at_price | default: 0 | json }},
+                          "option1": {{ variant.option1 | json }},
+                          "option2": {{ variant.option2 | json }},
+                          "option3": {{ variant.option3 | json }}
+                        }{% unless forloop.last %},{% endunless %}
+                      {%- endfor -%}
+                    ]
+                  }
+                </script>
+              {%- endif -%}
+
+              {%- if fbt_product.metafields.reviews.rating.value -%}
+                <div class="fbt-rating">
+                  {%- assign rating = fbt_product.metafields.reviews.rating.value.rating -%}
+                  {%- assign rating_count = fbt_product.metafields.reviews.rating.value.count -%}
+                  <div class="fbt-stars" style="--rating: {{ rating }}">
+                    <span class="fbt-stars-empty">★★★★★</span>
+                    <span class="fbt-stars-filled">★★★★★</span>
+                  </div>
+                  <span class="fbt-rating-count">({{ rating_count }})</span>
+                </div>
+              {%- endif -%}
+              
+            </div>
+
+            <input type="hidden" class="fbt-variant-id" value="{{ current_variant.id }}" data-product-id="{{ fbt_product.id }}">
+          </div>
+        </div>
+      {%- endfor -%}
+    </div>
+
+    {%- if products_count > 3 -%}
+      <button type="button" class="fbt-nav fbt-nav-prev" aria-label="Previous">‹</button>
+      <button type="button" class="fbt-nav fbt-nav-next" aria-label="Next">›</button>
+    {%- endif -%}
+  </div>
+
+  <div class="fbt-footer">
+    <div class="fbt-savings-message"><span class="fbt-savings-text"></span></div>
+    <!-- Total Price Display -->
+    <div class="fbt-total-price" style="font-weight: 600; font-size: 18px; margin-bottom: 10px;">
+      Total:  {{ price | money }} <span class="fbt-compare-total">{{ compare_price | money }}</span>
+    </div>
+    <div class="fbt-qty-btn">
+    <div class="fbt-main-qty-wrapper">
+        <input type="number" class="fbt-main-qty-input" value="1" min="1">
+    </div>
+    <button type="button" class="fbt-add-to-cart-btn" data-fbt-add-cart>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 5h14m0 0a2 2 0 100 4 2 2 0 000-4zm-10 0a2 2 0 100 4 2 2 0 000-4z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span>Add to cart</span>
+    </button>
+    </div>
+    <!-- Success Message (Initially Hidden) -->
+  <div class="fbt-success-message" style="display: none; color: green; font-size: 16px; margin-top: 10px;">
+    Your product has been successfully added to the cart!
+  </div>
+  </div>
+</div>
+</div>
+{% endif %}
+{% stylesheet %}
+.fbt-main-qty-wrapper {
+    display: flex;
+    align-items: center;
+}
+.fbt-para {
+    text-align: center;
+}
+.fbt-main-qty-input {
+    width: 60px;
+    padding: 6px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 15px;
+}
+ .fbt-block {
+     margin: 30px 0;
+}
+ .fbt-heading {
+     font-size: 26px;
+     font-weight: 600;
+     color: #2D2D2D;
+     margin-bottom: 25px;
+     font-family: 'roboto-SemiBold';
+     text-align: center;
+}
+ .fbt-products-wrapper {
+     position: relative;
+     margin-bottom: 20px;
+}
+ .fbt-products {
+     display: flex;
+     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+     gap: 8px;
+     align-items: start;
+     justify-content: center;
+}
+ .fbt-products--carousel {
+     display: flex;
+     overflow-x: auto;
+     scroll-behavior: smooth;
+     scrollbar-width: none;
+     -ms-overflow-style: none;
+     gap: 15px;
+}
+ .fbt-products--carousel::-webkit-scrollbar {
+     display: none;
+}
+ .fbt-products--carousel .fbt-product-card {
+     flex: 0 0 280px;
+}
+ .fbt-product-card {
+     position: relative;
+     display: flex;
+     align-items: center;
+     width: 16%;
+}
+.fbt-plus-icon {
+    font-size: 35px;
+    font-weight: 300;
+    color: #9ca3af;
+    flex-shrink: 0;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 99;
+    left: -19px;
+    border: 1px solid gray;
+    height: 30px;
+    width: 30px;
+    text-align: center;
+    line-height: 27px;
+    border-radius: 100px;
+    background: blue;
+}
+ .fbt-card-inner {
+     position: relative;
+     background: white;
+     border: 1px solid #e5e7eb;
+     border-radius: 10px;
+     width: 100%;
+     transition: box-shadow 0.2s;
+}
+ .fbt-card-inner:hover {
+     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+ .fbt-checkbox-wrapper {
+     position: absolute;
+     top: 12px;
+     right: 12px;
+     z-index: 2;
+}
+ .fbt-checkbox {
+     display: none !important;
+}
+ .fbt-checkbox-label {
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     width: 20px;
+     height: 20px;
+     border: 2px solid #d1d5db;
+     border-radius: 6px;
+     cursor: pointer;
+     transition: all 0.2s;
+     background: white;
+}
+ .fbt-checkbox:checked + .fbt-checkbox-label {
+     background: #16a34a;
+     border-color: #16a34a;
+}
+ .fbt-check-icon {
+     width: 16px;
+     height: 16px;
+     color: white;
+     opacity: 0;
+     transition: opacity 0.2s;
+}
+ .fbt-checkbox:checked + .fbt-checkbox-label .fbt-check-icon {
+     opacity: 1;
+}
+ .fbt-product-image {
+     width: 100%;
+     margin-bottom: 12px;
+}
+ .fbt-product-image img {
+     width: 100%;
+     height: auto;
+     display: block;
+     border-radius: 10px 10px 0px 0px;
+}
+.fbt-product-info {
+    width: 100%;
+    padding: 16px 16px 0;
+}
+ .fbt-product-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #000;
+    margin: 0 0 10px;
+    line-height: 1.4;
+}
+ .fbt-product-title a {
+     color: inherit;
+     text-decoration: none;
+}
+ .fbt-product-title a:hover {
+     color: #16a34a;
+}
+ .fbt-variant-selector {
+     margin-bottom: 10px;
+}
+ .fbt-option-buttons {
+     display: flex;
+     gap: 6px;
+     flex-wrap: wrap;
+}
+ .fbt-option-btn {
+     padding: 5px 12px;
+     border: 2px solid #e5e7eb;
+     border-radius: 6px;
+     background: white;
+     font-size: 12px;
+     font-weight: 500;
+     color: #4b5563;
+     cursor: pointer;
+     transition: all 0.2s;
+}
+ .fbt-option-btn:hover {
+     border-color: #16a34a;
+}
+ .fbt-option-btn.active {
+     border-color: #16a34a;
+     background: #f0fdf4;
+     color: #16a34a;
+}
+ .fbt-rating {
+     display: flex;
+     align-items: center;
+     gap: 5px;
+     margin-bottom: 8px;
+}
+ .fbt-stars {
+     position: relative;
+     font-size: 14px;
+     line-height: 1;
+}
+ .fbt-stars-empty {
+     color: #d1d5db;
+}
+ .fbt-stars-filled {
+     position: absolute;
+     top: 0;
+     left: 0;
+     color: #fbbf24;
+     width: calc(var(--rating) * 20%);
+     overflow: hidden;
+     white-space: nowrap;
+}
+ .fbt-rating-count {
+     font-size: 12px;
+     color: #6b7280;
+}
+ .fbt-price-wrapper {
+     display: flex;
+     align-items: center;
+     gap: 6px;
+}
+ .fbt-price {
+     font-size: 16px;
+     font-weight: 700;
+     color: #1f2937;
+}
+ .fbt-compare-price {
+     font-size: 16px;
+     color: #343434;
+     font-weight: 700;
+     text-decoration: line-through;
+}
+.fbt-footer {
+    display: block;
+    text-align: center;
+    padding: 16px;
+}
+ .fbt-savings-message {
+     flex: 1;
+}
+ .fbt-savings-text {
+     font-size: 14px;
+     color: #4b5563;
+}
+ .fbt-add-to-cart-btn {
+     display: flex;
+     align-items: center;
+     gap: 8px;
+     padding: 12px 28px;
+     background: #16a34a;
+     color: white;
+     border: none;
+     border-radius: 8px;
+     font-size: 15px;
+     font-weight: 600;
+     cursor: pointer;
+     transition: background 0.2s;
+}
+ .fbt-add-to-cart-btn:hover {
+     background: #15803d;
+}
+ .fbt-add-to-cart-btn:disabled {
+     background: #d1d5db;
+     cursor: not-allowed;
+}
+ .fbt-nav {
+     position: absolute;
+     top: 50%;
+     transform: translateY(-50%);
+     width: 36px;
+     height: 36px;
+     background: white;
+     border: 2px solid #16a34a;
+     border-radius: 50%;
+     color: #16a34a;
+     font-size: 22px;
+     cursor: pointer;
+     transition: all 0.2s;
+     z-index: 10;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+}
+ .fbt-nav:hover {
+     background: #16a34a;
+     color: white;
+}
+ .fbt-nav-prev {
+     left: -18px;
+}
+ .fbt-nav-next {
+     right: -18px;
+}
+.fbt-option-dropdown select {
+    width: 100%;
+    padding: 6px;
+    border-radius: 7px;
+}
+.fbt-qty-btn {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+.fbt-compare-total {
+    text-decoration: line-through;
+}
+ @media screen and (max-width: 768px) {
+     .fbt-products {
+         grid-template-columns: 1fr;
+    }
+     .fbt-products--carousel .fbt-product-card {
+         flex: 0 0 260px;
+    }
+     .fbt-plus-icon {
+         display: none;
+    }
+     .fbt-footer {
+         flex-direction: column;
+         align-items: stretch;
+    }
+     .fbt-add-to-cart-btn {
+         width: 100%;
+         justify-content: center;
+    }
+     .fbt-nav {
+         display: none;
+    }
+}
+{% endstylesheet %}
+<!-- STYLES, JS, and SCHEMA remain exactly as given -->
+<script>
+(function() {
+		const block = document.querySelector('.fbt-block');
+		if (!block) return;
+		const productsContainer = block.querySelector('[data-fbt-products]');
+		const addToCartBtn = block.querySelector('[data-fbt-add-cart]');
+		const savingsText = block.querySelector('.fbt-savings-text');
+		if (!addToCartBtn || !savingsText) return; 
+        // Calculate totals and update UI
+        {% comment %} function updateTotals() {
+            const checkboxes = block.querySelectorAll('.fbt-checkbox:checked');
+            let totalPrice = 0;
+            let totalCompare = 0;
+            const count = checkboxes.length;
+
+            const mainQty = parseInt(block.querySelector('.fbt-main-qty-input').value) || 1;
+
+            checkboxes.forEach(checkbox => {
+                const card = checkbox.closest('.fbt-product-card');
+                const price = parseInt(card.querySelector('.fbt-price').dataset.price) || 0;
+                const compare = parseInt(card.querySelector('.fbt-compare-price')?.dataset.compare || '0') || 0;
+                totalPrice += price;
+                if (compare > 0) {
+                    totalCompare += compare;
+                } else {
+                    totalCompare += price;
+                }
+            });
+
+            // Multiply total price by main bundle quantity
+            const finalPrice = totalPrice * mainQty;
+
+            // Update total price display
+            const totalPriceEl = block.querySelector('.fbt-total-price');
+            if (totalPriceEl) {
+                totalPriceEl.textContent = `Total: ₹${(finalPrice / 100).toFixed(0)}/-`;
+            }
+
+            // Update savings text
+            const savings = totalCompare - totalPrice;
+            if (count > 0) {
+                if (savings > 0) {
+                    savingsText.textContent = `You save ₹${(savings / 100).toFixed(0)} when you buy these ${count}`;
+                } else {
+                    savingsText.textContent = "Please add at least 1 add-on item to proceed";
+                }
+                addToCartBtn.disabled = false;
+            } else {
+                savingsText.textContent = 'Please select at least one product';
+                addToCartBtn.disabled = true;
+            }
+        } {% endcomment %}
+        // Calculate totals and update UI
+
+        // Function to format number with currency symbol
+        function formatCurrency(amount) {
+            const currency = '₹'; // You can change this based on your currency symbol
+            return `${currency}${(amount / 100).toFixed(0)}`;
+        }
+
+        // Calculate totals and update UI
+        function updateTotals() {
+        const checkboxes = block.querySelectorAll('.fbt-checkbox:checked');
+        let totalPrice = 0;
+        let totalCompare = 0;
+        const count = checkboxes.length;
+
+        const mainQty = parseInt(block.querySelector('.fbt-main-qty-input').value) || 1;
+
+        checkboxes.forEach(checkbox => {
+            const card = checkbox.closest('.fbt-product-card');
+            const price = parseInt(card.querySelector('.fbt-price').dataset.price) || 0;
+            const compare = parseInt(card.querySelector('.fbt-compare-price')?.dataset.compare || '0') || 0;
+
+            totalPrice += price;
+            totalCompare += compare > 0 ? compare : price; // Use compare price if available, else regular price
+        });
+
+        // Multiply total price and compare price by main bundle quantity
+        const finalPrice = totalPrice * mainQty;
+        const finalComparePrice = totalCompare * mainQty;
+
+        // Update total price display
+        const totalPriceEl = block.querySelector('.fbt-total-price');
+        if (totalPriceEl) {
+            totalPriceEl.innerHTML = `Total: ${formatCurrency(finalPrice)} <span class="fbt-compare-total"> ${formatCurrency(finalComparePrice)}</span>`;
+        }
+
+        // Update savings text
+        const savings = finalComparePrice - finalPrice;
+        if (count > 0) {
+            if (savings > 0) {
+                savingsText.textContent = `You save ${formatCurrency(savings)} when you buy these ${count}`;
+            } else {
+                savingsText.textContent = "Please add at least 1 add-on item to proceed";
+            }
+            addToCartBtn.disabled = false;
+        } else {
+            savingsText.textContent = 'Please select at least one product';
+            addToCartBtn.disabled = true;
+        }
+    }
+
+
+        // Add event listener for quantity input
+        const mainQtyInput = block.querySelector('.fbt-main-qty-input');
+        if (mainQtyInput) {
+            mainQtyInput.addEventListener('input', updateTotals);
+        }
+
+        // Handle checkbox changes
+        block.querySelectorAll('.fbt-checkbox').forEach(checkbox => { 
+            checkbox.addEventListener('change', updateTotals); 
+        });
+        // Handle variant selection 
+        
+        {% comment %} block.querySelectorAll('.fbt-variant-selector select').forEach(select => {
+        select.addEventListener('change', function() {
+            const productId = this.dataset.productId;
+            const optionPosition = parseInt(this.dataset.optionPosition);
+            const optionValue = this.value;
+
+            const card = this.closest('.fbt-product-card');
+            const selector = card.querySelector('.fbt-variant-selector');
+            if (!selector) return;
+
+            const selectedOptions = {};
+            selector.querySelectorAll('select').forEach(s => {
+            selectedOptions[parseInt(s.dataset.optionPosition)] = s.value;
+            });
+
+            const variantsDataEl = card.querySelector('.fbt-variants-data');
+            if (!variantsDataEl) return;
+            const variantsData = JSON.parse(variantsDataEl.textContent);
+
+            const matchingVariant = variantsData.variants.find(v => {
+            return (!selectedOptions[1] || v.option1 === selectedOptions[1]) &&
+                    (!selectedOptions[2] || v.option2 === selectedOptions[2]) &&
+                    (!selectedOptions[3] || v.option3 === selectedOptions[3]);
+            });
+
+            if (!matchingVariant) return;
+
+            card.querySelector('.fbt-variant-id').value = matchingVariant.id;
+
+            const priceEl = card.querySelector('.fbt-price');
+            const compareEl = card.querySelector('.fbt-compare-price');
+            const priceWrapper = card.querySelector('.fbt-price-wrapper');
+
+            priceEl.textContent = `₹${(matchingVariant.price / 100).toFixed(0)}/-`;
+            priceEl.dataset.price = matchingVariant.price;
+
+            if (matchingVariant.compare_at_price > matchingVariant.price) {
+            if (compareEl) {
+                compareEl.textContent = `₹${(matchingVariant.compare_at_price / 100).toFixed(0)}/-`;
+                compareEl.dataset.compare = matchingVariant.compare_at_price;
+                compareEl.style.display = '';
+            } else {
+                const newCompareEl = document.createElement('span');
+                newCompareEl.className = 'fbt-compare-price';
+                newCompareEl.dataset.compare = matchingVariant.compare_at_price;
+                newCompareEl.textContent = `₹${(matchingVariant.compare_at_price / 100).toFixed(0)}/-`;
+                priceWrapper.appendChild(newCompareEl);
+            }
+            } else if (compareEl) {
+            compareEl.style.display = 'none';
+            compareEl.dataset.compare = '0';
+            }
+
+            //updateTotals();
+            block.querySelector('.fbt-main-qty-input').addEventListener('input', updateTotals);
+        });
+        }); {% endcomment %}
+        // Handle variant selection
+        block.querySelectorAll('.fbt-variant-selector select').forEach(select => {
+          select.addEventListener('change', function() {
+              const productId = this.dataset.productId;
+              const optionPosition = parseInt(this.dataset.optionPosition);
+              const optionValue = this.value;
+
+              const card = this.closest('.fbt-product-card');
+              const selector = card.querySelector('.fbt-variant-selector');
+              if (!selector) return;
+
+              const selectedOptions = {};
+              selector.querySelectorAll('select').forEach(s => {
+                  selectedOptions[parseInt(s.dataset.optionPosition)] = s.value;
+              });
+
+              const variantsDataEl = card.querySelector('.fbt-variants-data');
+              if (!variantsDataEl) return;
+              const variantsData = JSON.parse(variantsDataEl.textContent);
+
+              const matchingVariant = variantsData.variants.find(v => {
+                  return (!selectedOptions[1] || v.option1 === selectedOptions[1]) &&
+                          (!selectedOptions[2] || v.option2 === selectedOptions[2]) &&
+                          (!selectedOptions[3] || v.option3 === selectedOptions[3]);
+              });
+
+              if (!matchingVariant) return;
+
+              card.querySelector('.fbt-variant-id').value = matchingVariant.id;
+
+              const priceEl = card.querySelector('.fbt-price');
+              const compareEl = card.querySelector('.fbt-compare-price');
+              const priceWrapper = card.querySelector('.fbt-price-wrapper');
+
+              priceEl.textContent = `₹${(matchingVariant.price / 100).toFixed(0)}/-`;
+              priceEl.dataset.price = matchingVariant.price;
+
+              if (matchingVariant.compare_at_price > matchingVariant.price) {
+                  if (compareEl) {
+                      compareEl.textContent = `₹${(matchingVariant.compare_at_price / 100).toFixed(0)}/-`;
+                      compareEl.dataset.compare = matchingVariant.compare_at_price;
+                      compareEl.style.display = '';
+                  } else {
+                      const newCompareEl = document.createElement('span');
+                      newCompareEl.className = 'fbt-compare-price';
+                      newCompareEl.dataset.compare = matchingVariant.compare_at_price;
+                      newCompareEl.textContent = `₹${(matchingVariant.compare_at_price / 100).toFixed(0)}/-`;
+                      priceWrapper.appendChild(newCompareEl);
+                  }
+              } else if (compareEl) {
+                  compareEl.style.display = 'none';
+                  compareEl.dataset.compare = '0';
+              }
+
+              // Recalculate totals after variant change
+              updateTotals();
+          });
+        });
+
+        // handle add to cart button
+        addToCartBtn.addEventListener('click', async function() {
+        const btn = this;
+        const originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span>Adding...</span>';
+
+        const items = [];
+        block.querySelectorAll('.fbt-checkbox:checked').forEach(checkbox => {
+            const card = checkbox.closest('.fbt-product-card');
+            const variantId = card.querySelector('.fbt-variant-id').value;
+            const numericId = parseInt(variantId, 10);
+            if (numericId && numericId > 0) {
+            const bundleQty = parseInt(block.querySelector('.fbt-main-qty-input').value) || 1;
+            items.push({ id: numericId, quantity: bundleQty });
+            }
+        });
+
+        if (items.length === 0) {
+            alert('Please select at least one product.');
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+            return;
+        }
+
+        try {
+            const response = await fetch('/cart/add.js', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items })
+            });
+            const data = await response.json();
+            console.log('Cart API response:', data);
+
+            if (!response.ok) {
+            throw new Error(data.description || data.message || "Failed to add to cart");
+            }
+
+            // Wait a little to give Shopify time to update cart internally
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            // Trigger full drawer refresh via custom event (some themes listen to this)
+            document.dispatchEvent(new CustomEvent('cart:refresh', { bubbles: true }));
+
+            // Additionally, manually fetch drawer HTML and replace (fallback)
+            try {
+            const drawerHtml = await fetch('/cart?view=drawer&t=' + Date.now()).then(r => r.text());
+            const parser = new DOMParser().parseFromString(drawerHtml, 'text/html');
+            const newDrawer = parser.querySelector('cart-drawer, .cart-drawer, #cart-drawer');
+            const oldDrawer = document.querySelector('cart-drawer, .cart-drawer, #cart-drawer');
+            if (newDrawer && oldDrawer && oldDrawer.parentNode) {
+                oldDrawer.parentNode.replaceChild(newDrawer, oldDrawer);
+            }
+            // Open drawer if possible
+            const drawerToOpen = document.querySelector('cart-drawer, .cart-drawer, #cart-drawer');
+            if (drawerToOpen) {
+                if (typeof drawerToOpen.open === 'function') {
+                drawerToOpen.open();
+                } else {
+                drawerToOpen.classList.add('is-open');
+                }
+            }
+            } catch (drawerError) {
+            console.warn('Cart-drawer refresh failed', drawerError);
+            }
+
+            // Show success message
+            const successMessage = block.querySelector('.fbt-success-message');
+            if (successMessage) {
+            successMessage.style.display = 'block';  // Show the success message
+            setTimeout(() => {
+                successMessage.style.display = 'none';  // Hide it after 3 seconds
+            }, 5000);
+            }
+
+        } catch (error) {
+            console.error("Error adding to cart:", error);
+            alert('Error: ' + error.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        }
+        });
+
+
+        // Carousel navigation 
+        const prevBtn = block.querySelector('.fbt-nav-prev');
+        const nextBtn = block.querySelector('.fbt-nav-next');
+        if (prevBtn && nextBtn && productsContainer) {
+            prevBtn.addEventListener('click', () => {
+                productsContainer.scrollBy({
+                    left: -300,
+                    behavior: 'smooth'
+                });
+            });
+            nextBtn.addEventListener('click', () => {
+                productsContainer.scrollBy({
+                    left: 300,
+                    behavior: 'smooth'
+                });
+            });
+        }
+        // Initial calculation 
+        updateTotals();
+        })();
+</script>
+
+
+{% schema %} 
+{
+  "name": "Bundle Product Custom",
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Frequently bought together"
+    },
+    {
+      "type": "richtext",
+      "id": "subpara",
+      "label": "Sub Heading"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Bundle Product Custom",
+      "category": "Product"
+    }
+  ]
+}
+{% endschema %}
